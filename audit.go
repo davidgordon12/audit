@@ -21,7 +21,7 @@ func NewAudit() *Audit {
 	return a
 }
 
-func (audit *Audit) addFile(path string) {
+func (audit *Audit) AddFile(path string) {
 	f, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Println("Couldn't open file " + path)
@@ -31,15 +31,15 @@ func (audit *Audit) addFile(path string) {
 	audit.logger.SetOutput(wrt)
 }
 
-func (audit *Audit) info(msg string) {
+func (audit *Audit) Info(msg string) {
 	go audit.logg("INFO", msg)
 }
 
-func (audit *Audit) warn(msg string) {
+func (audit *Audit) Warn(msg string) {
 	go audit.logg("WARNING", msg)
 }
 
-func (audit *Audit) error(msg string) {
+func (audit *Audit) Error(msg string) {
 	/* Send some sort of alert here as well eventually */
 	go audit.logg("ERROR", msg)
 }
