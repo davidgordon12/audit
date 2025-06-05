@@ -4,7 +4,9 @@ A stylish wrapper around Go's Logger package.
 
 Audit is just a single Go file, that is short and sweet. Easy to read, modify and extend. Getting started is simple, first, download the dependency.
 
-```go get github.com/davidgordon12/audit```
+```
+go get github.com/davidgordon12/audit
+```
 
 Then, just call NewAudit!
 
