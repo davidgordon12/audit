@@ -32,19 +32,19 @@ func (audit *Audit) addFile(path string) {
 }
 
 func (audit *Audit) info(msg string) {
-	go logg("INFO", msg)
+	go audit.logg("INFO", msg)
 }
 
 func (audit *Audit) warn(msg string) {
-	go logg("WARNING", msg)
+	go audit.logg("WARNING", msg)
 }
 
 func (audit *Audit) error(msg string) {
 	/* Send some sort of alert here as well eventually */
-	go logg("ERROR", msg)
+	go audit.logg("ERROR", msg)
 }
 
-func logg(step, msg string) {
+func (audit *Audit) logg(step, msg string) {
 	pattern, _ := regexp.Compile("\r?\n")
 	msg = pattern.ReplaceAllString(msg, " ")
 	audit.logger.Printf("%s %s: %s", time.Now().UTC().Format("[2006-01-02 15:04:05] "), step, msg)
