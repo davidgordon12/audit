@@ -83,6 +83,11 @@ func (audit *Audit) Error(msg string) {
 	go audit.logg("\033[31m❌ERRO\033[m", msg)
 }
 
+func (audit *Audit) Fatal(msg string) {
+        audit.logg("\033[35m☠FATA\033[m", msg)
+	os.Exit(22)
+}
+
 func (audit *Audit) logg(step, msg string) {
 	pattern, _ := regexp.Compile("\r?\n") // Not catostrophic if this fails, so ignore it
 	msg = pattern.ReplaceAllString(msg, " ")
