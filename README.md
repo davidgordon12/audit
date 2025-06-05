@@ -45,8 +45,6 @@ func main() {
 }
 ```
 
-Output:
-
 More features to come, like JSON parsing, Tracing, and more.
 
 ## TODO:
