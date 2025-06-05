@@ -54,3 +54,4 @@ More features to come, like JSON parsing, Tracing, and more.
 - [ ] Implement TRACE (and the ability to set the max depth)
 - [ ] Implement ERROR alerts to 3rd party logging systems like Grafana and Datadog
 - [ ] Maybe enable or disable emojis for legacy terminals and editors (but who else is really using this)
+- [ ] Fix dangling threads with wait groups / channels
