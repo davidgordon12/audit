@@ -60,7 +60,7 @@ func (audit *Audit) DateFormat(format string) *Audit {
 
 func (audit *Audit) Trace(msg string) {
 	if audit.level <= int(TRACE) {
-		go audit.logg("\033[95m🐱‍👤TRAC\033[m", msg)
+		go audit.logg("\033[95m🔎TRAC\033[m", msg)
 	}
 }
 
@@ -71,7 +71,7 @@ func (audit *Audit) Debug(msg string) {
 }
 
 func (audit *Audit) Info(msg string) {
-	go audit.logg("\033[92m📚INFO\033[m", msg)
+	go audit.logg("\033[92m👋INFO\033[m", msg)
 }
 
 func (audit *Audit) Warn(msg string) {
