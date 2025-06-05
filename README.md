@@ -18,11 +18,14 @@ import "github.com/davidgordon12/audit"
 func main() {
   audit := audit.NewAudit()
 
-  audit.Info("I'M ALIVE!!!!!")
+  audit.Info("IM ALIVE!!!!!")
 }
 ```
 
 Output: 
+```bash
+[2025-06-05 22:05:53] 👋INFO IM ALIVE!!!!!
+```
 
 If you wan't to change a few options, you can easily configure them by chaining some more methods to the initialization 
 
