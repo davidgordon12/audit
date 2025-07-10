@@ -5,8 +5,11 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sync"
 	"time"
 )
+
+var wait *sync.WaitGroup
 
 type Audit struct {
 	logger log.Logger
@@ -27,6 +30,8 @@ const (
 )
 
 func NewAudit() *Audit {
+	wait = &sync.WaitGroup{}
+
 	a := new(Audit)
 	a.logger = *log.New(os.Stderr, "", 0)
 	a.level = int(INFO)
@@ -59,36 +64,43 @@ func (audit *Audit) DateFormat(format string) *Audit {
 }
 
 func (audit *Audit) Trace(msg string) {
+	wait.Add(1)
 	if audit.level <= int(TRACE) {
 		go audit.logg("\033[95m🔎TRAC\033[m", msg)
 	}
 }
 
 func (audit *Audit) Debug(msg string) {
+	wait.Add(1)
 	if audit.level <= int(DEBUG) {
 		go audit.logg("\033[95m🐛DEBU\033[m", msg)
 	}
 }
 
 func (audit *Audit) Info(msg string) {
+	wait.Add(1)
 	go audit.logg("\033[92m👋INFO\033[m", msg)
 }
 
 func (audit *Audit) Warn(msg string) {
+	wait.Add(1)
 	go audit.logg("\033[33m⚠WARN\033[m", msg)
 }
 
 func (audit *Audit) Error(msg string) {
 	/* Send some sort of alert here as well eventually */
+	wait.Add(1)
 	go audit.logg("\033[31m❌ERRO\033[m", msg)
 }
 
 func (audit *Audit) Fatal(msg string) {
+	wait.Add(1)
         audit.logg("\033[35m☠FATA\033[m", msg)
 	os.Exit(22)
 }
 
 func (audit *Audit) logg(step, msg string) {
+	defer wait.Done()
 	pattern, _ := regexp.Compile("\r?\n") // Not catostrophic if this fails, so ignore it
 	msg = pattern.ReplaceAllString(msg, " ")
 	audit.logger.Printf("\033[1m%s %s \033[1m%s", time.Now().UTC().Format(audit.format), step, msg)
