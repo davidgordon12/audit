@@ -1,11 +1,11 @@
 package audit
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"regexp"
-	"sync"
 	"time"
 )
 
@@ -15,6 +15,7 @@ type Audit struct {
 	writer io.Writer
 	format string
 	emoji  bool
+	queue  *Queue
 }
 
 type LogLevel int
@@ -33,6 +34,7 @@ func NewAudit() *Audit {
 	a.level = int(INFO)
 	a.format = "[2006-01-02 15:04:05]"
 	a.emoji = true // This will probably not be modifiable
+	a.queue = NewQueue()
 	return a
 }
 
@@ -85,26 +87,17 @@ func (audit *Audit) Error(msg string) {
 }
 
 func (audit *Audit) Fatal(msg string) {
-        audit.logg("\033[35m☠FATA\033[m", msg)
+	audit.logg("\033[35m☠FATA\033[m", msg)
 	os.Exit(22)
 }
 
 func (audit *Audit) logg(step, msg string) {
-	wg := &sync.WaitGroup{}
-	done := make(chan int)
-	wg.Add(1)
+	pattern, _ := regexp.Compile("\r?\n") // Not catostrophic if this fails, so ignore it
+	msg = pattern.ReplaceAllString(msg, " ")
 
-	go func() {
-		defer wg.Done()
-		pattern, _ := regexp.Compile("\r?\n") // Not catostrophic if this fails, so ignore it
-		msg = pattern.ReplaceAllString(msg, " ")
-		audit.logger.Printf("\033[1m%s %s \033[1m%s", time.Now().UTC().Format(audit.format), step, msg)
-	}()
+	structured_msg := fmt.Sprintf("\033[1m%s %s \033[1m%s", time.Now().UTC().Format(audit.format), step, msg)
 
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
+	audit.queue.Append(structured_msg)
 
-	<-done
+	go audit.logger.Printf(structured_msg)
 }
