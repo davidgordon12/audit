@@ -18,7 +18,7 @@ func cleanup() {
 
 	var filesToDelete []string
 	for _, item := range items {
-		if !item.IsDir() && len(item.Name()) > 4 && item.Name()[0:4] == "logs" {
+		if !item.IsDir() && len(item.Name()) >= 4 && item.Name()[0:4] == "logs" {
 			filesToDelete = append(filesToDelete, item.Name())
 		}
 	}
@@ -30,6 +30,23 @@ func cleanup() {
 		} else {
 			fmt.Printf("Successfully deleted: \033[1m%s\n\033[0m", fileName)
 		}
+	}
+}
+
+func TestQueue(t *testing.T) {
+	// Setup
+	q := NewQueue()
+
+	// Act
+	q.Append("a")
+	q.Append("b")
+	q.Append("c")
+
+	q.Append("d") // Should overwrite "a", "b" becomes new "first" element
+
+	val, _ := q.Pop()
+	if val != "b" {
+		t.Errorf("Expected 'b', got %s", val)
 	}
 }
 
@@ -228,4 +245,91 @@ func TestLogSimulated(t *testing.T) {
 
 	audit.Close()
 	cleanup()
+}
+
+func TestFlush(t *testing.T) {
+	// Setup
+	config := AuditConfig{
+		FilePath:  "../resources/logs/log.txt",
+		BatchSize: 10,
+	}
+
+	audit, err := NewAudit(config)
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Failed to create audit: %w", err)
+	}
+
+	// Act
+	LogMessages := 10
+	for i := 0; i < LogMessages; i++ {
+		audit.Info(fmt.Sprintf("Info %d", i))
+		audit.Warn(fmt.Sprintf("Warn %d", i))
+		audit.Error(fmt.Sprintf("Error %d", i))
+	}
+
+	// Assert
+	file, err := os.Open(audit.config.FilePath)
+	if err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	lineCount := 0
+
+	for scanner.Scan() {
+		lineCount++
+	}
+
+	if err := scanner.Err(); err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+
+	if lineCount != LogMessages*3 {
+		t.Errorf("Expected %d lines to be written to file, got %d", LogMessages*3, lineCount)
+	}
+
+	// Cleanup
+	cleanup()
+	audit.Close()
+}
+
+func TestRotate(t *testing.T) {
+	// Setup
+	config := AuditConfig{
+		FileSize: 1024, // 1KB approx. 15 messages
+	}
+
+	audit, err := NewAudit(config)
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Failed to create audit: %w", err)
+	}
+
+	// Act
+	LogMessages := 1500
+	for i := 0; i < LogMessages; i++ {
+		audit.Info(fmt.Sprintf("Info %d", i))
+		audit.Warn(fmt.Sprintf("Warn %d", i))
+		audit.Error(fmt.Sprintf("Error %d", i))
+	}
+
+	// Assert
+	expectedFileCount := 3
+	actualFileCount := 0
+
+	files, _ := os.ReadDir(".")
+	for _, file := range files {
+		if file.Name()[0:4] == "logs" {
+			actualFileCount++
+		}
+	}
+
+	if expectedFileCount != actualFileCount {
+		t.Errorf("Expected %d files to be created, got %d", expectedFileCount, actualFileCount)
+	}
+
+	audit.Close()
+	//cleanup()
 }

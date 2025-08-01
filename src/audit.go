@@ -21,11 +21,20 @@ const (
 )
 
 type AuditConfig struct {
+	// How often queue messages will be written to file
 	FlushInterval time.Duration
-	BatchSize     int
-	FilePath      string
-	FileSize      int
-	Level         LogLevel
+
+	// How many messages will sit in the queue before they are all written at once
+	BatchSize int
+
+	// The file path without the name (e.g. resources/logs)
+	FilePath string
+
+	// Max file size in bytes
+	FileSize int
+
+	// LogLevel. Default is INFO
+	Level LogLevel
 }
 
 type Audit struct {
@@ -43,13 +52,14 @@ type Audit struct {
 }
 
 const (
-	DefaultBatchSize     = 256               // 256 Messages
-	DefaultFileSize      = 100 * 1024 * 1024 // 100 MB
+	DefaultBatchSize     = 256                // 256 Messages
+	DefaultFileSize      = 1024 * 1024 * 1024 // 1 GB
 	DefaultFlushInterval = 1 * time.Second
 
 	MaxBatchSize = 512
 )
 
+// Create a new Audit. Starts a background thread that periodically writes to file.
 func NewAudit(cfg AuditConfig) (*Audit, error) {
 	// Set defaults
 	if cfg.FilePath == "" {
@@ -67,17 +77,9 @@ func NewAudit(cfg AuditConfig) (*Audit, error) {
 		cfg.FlushInterval = DefaultFlushInterval
 	}
 
-	logDir := filepath.Dir(cfg.FilePath)
-	if logDir != "" && logDir != "." {
-		if err := os.MkdirAll(logDir, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create log directory %s: %w", logDir, err)
-		}
-	}
-
-	now := time.Now().Format("20060102_150405")
-	f, err := os.OpenFile(cfg.FilePath+now, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := openFile(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open log file %s: %w", f.Name(), err)
+		return nil, fmt.Errorf("couldn't open file: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -95,6 +97,32 @@ func NewAudit(cfg AuditConfig) (*Audit, error) {
 	return audit, nil
 }
 
+func openFile(cfg AuditConfig) (*os.File, error) {
+	logDir := filepath.Dir(cfg.FilePath)
+	if logDir != "" && logDir != "." {
+		if err := os.MkdirAll(logDir, 0755); err != nil {
+			return nil, fmt.Errorf("failed to create log directory %s: %w", logDir, err)
+		}
+	}
+
+	// If a file already exists, rename it, instead of opening and appending to it
+	_, err := os.Stat(cfg.FilePath)
+	if !os.IsNotExist(err) {
+		now := time.Now().Format("20060102_150405")
+		if err := os.Rename(cfg.FilePath, cfg.FilePath+now); err != nil {
+			return nil, fmt.Errorf("failed to rename old log file: %w", err)
+		}
+	}
+
+	f, err := os.OpenFile(cfg.FilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open log file %s: %w", f.Name(), err)
+	}
+
+	return f, nil
+}
+
+// Gracefully shuts down the auditer and flushes all messages from the queue to file before exiting.
 func (audit *Audit) Close() {
 	audit.cancel()
 	audit.wg.Wait()

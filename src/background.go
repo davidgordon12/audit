@@ -27,6 +27,19 @@ func startLogWriterService(audit *Audit) {
 
 		// TODO: Check if the file needs to be rotated
 		// Lock the mutex, check file size, unlock then call rotate (locks again)
+		audit.mtx.Lock()
+		info, err := audit.file.Stat()
+		audit.mtx.Unlock()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Couldn't access file: %s", err.Error())
+			return
+		}
+
+		fmt.Fprintf(os.Stdout, "%d\n", info.Size())
+		fmt.Fprintf(os.Stdout, "%d\n", audit.config.FileSize)
+		if info.Size() > int64(audit.config.FileSize) {
+			rotateLogFile(audit)
+		}
 	}
 }
 
@@ -67,7 +80,7 @@ func flush(audit *Audit) {
 
 }
 
-func (audit *Audit) rotateLogFile() error {
+func rotateLogFile(audit *Audit) error {
 	audit.mtx.Lock()
 	defer audit.mtx.Unlock()
 
@@ -78,11 +91,9 @@ func (audit *Audit) rotateLogFile() error {
 		return err
 	}
 
-	// Switch to a new file
-	now := time.Now().Format("20060102_150405")
-	f, err := os.OpenFile(audit.config.FilePath+now, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := openFile(audit.config)
 	if err != nil {
-		return fmt.Errorf("failed to open log file %s: %w", f.Name(), err)
+		return fmt.Errorf("failed to rename old log file: %w", err)
 	}
 
 	audit.file = f

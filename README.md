@@ -47,7 +47,7 @@ func main() {
     FlushInterval: 100 * time.Millisecond,
     BatchSize:     128,
     FilePath:      "resources/logs",
-    FileSize:      1024 * 100,
+    FileSize:      1024 * 1024 * 1024,
     Level:         DEBUG
   }
 
