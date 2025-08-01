@@ -22,6 +22,8 @@ package main
 import "github.com/davidgordon12/audit"
 
 func main() {
+  config := AuditConfig{}
+
   audit := audit.NewAudit(config)
 
   audit.Info("IM ALIVE!!!!!")
@@ -33,7 +35,7 @@ Output:
 [2025-06-05 22:05:53] 👋INFO IM ALIVE!!!!!
 ```
 
-If you wan't to change a few options, you can easily configure them by chaining some more methods to the initialization 
+Easily configure the auditer with the AuditConfig object
 
 ```go
 package main
@@ -41,16 +43,17 @@ package main
 import "github.com/davidgordon12/audit"
 
 func main() {
-	audit, err := audit.NewAudit().
-		Level(audit.DEBUG).
-		DateFormat("[2006-01-02 15:04:05]").
-		AddFile("logs.txt")
+  config := AuditConfig {
+    FlushInterval: 100 * time.Millisecond,
+    BatchSize:     128,
+    FilePath:      "resources/logs",
+    FileSize:      1024 * 100,
+    Level:         DEBUG
+  }
 
-  if err != nil {
-		audit.Error("Couldn't add file output to audit")
-	}
+  audit := audit.NewAudit(config)
 
-  audit.Info("Hello again :]")
+  audit.Info("IM ALIVE!!!!!")
 }
 ```
 
