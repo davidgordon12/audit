@@ -1,6 +1,6 @@
 # Audit
 
-A stylish wrapper around Go's Logger package.
+A stylish logging package.
 
 Audit is just a few Go files, that are short and sweet, easy to read, modify and extend. Getting started is simple, first, download the dependency.
 
