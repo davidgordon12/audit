@@ -4,7 +4,7 @@ import (
 	"errors"
 )
 
-const capacity = 512
+const capacity = 3
 
 // Only provides the following functionalitiy.
 // Append, Pop
@@ -28,12 +28,15 @@ func NewQueue() *Queue {
 // If the buffer is full, it overwrites the oldest element.
 func (q *Queue) Append(s string) {
 	q.buff[q.tail] = s
+
+	if q.count == capacity {
+		q.head = (q.head + 1) % capacity
+	}
+
 	q.tail = (q.tail + 1) % capacity
 
 	if q.count < capacity {
 		q.count++
-	} else {
-		q.head = (q.head + 1) % capacity
 	}
 }
 
