@@ -1,63 +1,65 @@
 package audit
 
 import (
+	"bufio"
+	"fmt"
+	"os"
 	"time"
 )
 
 // Starts the background worker to write messages from the queue to a file.
 func startLogWriterService(audit *Audit) {
-	ticker := time.NewTicker(flushInterval)
-	defer ticker.Stop()
+	audit.wg.Add(1)
+	defer audit.wg.Done()
 
+	ticker := time.NewTicker(audit.config.FlushInterval)
+	defer ticker.Stop()
 
 	for {
 		select {
-		case <-audit.queue.count > audit.config.BatchSize:
-			flush()
 		case <-ticker.C:
-			flush()
+			flush(audit)
 		case <-audit.ctx.Done():
-			flush()
+			flush(audit)
 			return
 		}
 
 		// TODO: Check if the file needs to be rotated
 		// Lock the mutex, check file size, unlock then call rotate (locks again)
 	}
-	flush(audit)
 }
 
 // Flush the queue holding all our logger messages
 func flush(audit *Audit) {
-	audit.mu.Lock()
-	defer audit.mu.Unlock()
+	audit.mtx.Lock()
+	defer audit.mtx.Unlock()
 
 	// Pop does not actually remove any elements from the slice
 	// So it is safe to call it in the loop
 	for i := 0; i < audit.queue.count; i++ {
 		log_msg, err := audit.queue.Pop()
 		if err != nil {
-			return;
+			return
 		}
 
-		if len(msg) > 0 && msg[len(msg)-1] != '\n' {
-			_, err := audit.writer.WriteString(log_msg + '\n')
-			fmt.Fprintf(os.Stderr, err.Error())
+		if len(log_msg) > 0 && log_msg[len(log_msg)-1] != '\n' {
+			_, err := audit.writer.WriteString(log_msg + "\n")
+			fmt.Fprintf(os.Stderr, "%s", err)
 		} else {
 			_, err := audit.writer.WriteString(log_msg)
-			fmt.Fprintf(os.Stderr, err.Error())
+			fmt.Fprintf(os.Stderr, "%s", err)
 		}
 	}
 
-	if err := l.writer.Flush(); err != nil {
-		fmt.Fprintf(os.Stderr, err.Error())
+	if err := audit.writer.Flush(); err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err)
 	}
 
 }
 
 func (audit *Audit) rotateLogFile() error {
-	audit.mu.Lock()
-	defer audit.mu.Unlock()
+	audit.mtx.Lock()
+	defer audit.mtx.Unlock()
 
 	if err := audit.writer.Flush(); err != nil {
 		return err
@@ -67,10 +69,10 @@ func (audit *Audit) rotateLogFile() error {
 	}
 
 	// Switch to a new file
-	now = time.Now().Format("20060102_150405")
-	f, err := os.OpenFile(cfg.FilePath + now, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	now := time.Now().Format("20060102_150405")
+	f, err := os.OpenFile(audit.config.FilePath+now, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		return fmt.Errorf("failed to open log file %s: %w", f, err)
+		return fmt.Errorf("failed to open log file %s: %w", f.Name(), err)
 	}
 
 	audit.file = f

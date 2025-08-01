@@ -1,16 +1,17 @@
 package audit
 
 import (
+	"bufio"
+	"context"
 	"fmt"
-	"io"
-	"log"
 	"os"
-	"regexp"
-	"time"
+	"path/filepath"
 	"sync"
+	"time"
 )
 
 type LogLevel int
+
 const (
 	TRACE LogLevel = iota
 	DEBUG
@@ -21,35 +22,35 @@ const (
 
 type AuditConfig struct {
 	FlushInterval time.Duration
-	BatchSize int
-	FilePath string
-	FileSize int
-	Level LogLevel
+	BatchSize     int
+	FilePath      string
+	FileSize      int
+	Level         LogLevel
 }
 
 type Audit struct {
 	config AuditConfig
 
-	file *os.File
+	file   *os.File
 	writer *bufio.Writer
 	queue  *Queue
 
-	wg sync.Wait
-	mu sync.Mutex
+	wg  sync.WaitGroup
+	mtx sync.Mutex
 
-	ctx context.Context
+	ctx    context.Context
 	cancel context.CancelFunc
 }
 
 const (
-	DefaultBatchSize = 256 // 256 Messages
-	DefaultFileSize = 100 * 1024 * 1024 // 100 MB
+	DefaultBatchSize     = 256               // 256 Messages
+	DefaultFileSize      = 100 * 1024 * 1024 // 100 MB
 	DefaultFlushInterval = 1 * time.Second
 
 	MaxBatchSize = 512
 )
 
-func NewAudit(cfg AuditConfig) (*Audit, Error) {
+func NewAudit(cfg AuditConfig) (*Audit, error) {
 	// Set defaults
 	if cfg.FilePath == "" {
 		cfg.FilePath = "logs"
@@ -65,48 +66,46 @@ func NewAudit(cfg AuditConfig) (*Audit, Error) {
 	if cfg.FlushInterval <= 0 {
 		cfg.FlushInterval = DefaultFlushInterval
 	}
-	
-	// Create log directory if it doesn't exist
-	logDir := filepath.Dir(cfg.LogFilePath)
-	if logDir != "" && logDir != "." { // Don't try to create "" or "."
+
+	logDir := filepath.Dir(cfg.FilePath)
+	if logDir != "" && logDir != "." {
 		if err := os.MkdirAll(logDir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create log directory %s: %w", logDir, err)
 		}
 	}
-	
-	now = time.Now().Format("20060102_150405")
-	f, err := os.OpenFile(cfg.FilePath + now, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+
+	now := time.Now().Format("20060102_150405")
+	f, err := os.OpenFile(cfg.FilePath+now, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open log file %s: %w", f, err)
+		return nil, fmt.Errorf("failed to open log file %s: %w", f.Name(), err)
 	}
 
-	audit := &Audit {
+	ctx, cancel := context.WithCancel(context.Background())
+	audit := &Audit{
 		config: cfg,
-		file: f,
-		writer: bufio.NewWriter(f)
-		queue: NewQueue(),
+		file:   f,
+		writer: bufio.NewWriter(f),
+		queue:  NewQueue(),
+		ctx:    ctx,
+		cancel: cancel,
 	}
 
-	audit.wg.Add(1)
-	go func(a *Audit) {
-		defer wait.Done()
-		startLogWriterService(a)
-	}(audit)
+	go startLogWriterService(audit)
 
 	return audit, nil
 }
 
 func (audit *Audit) Close() {
 	audit.cancel()
-	audit.mu.Lock()
 	audit.wg.Wait()
 
 	if audit.queue.count != 0 {
 		flush(audit) // Manual flush
 	}
 
+	audit.mtx.Lock()
 	audit.file.Close()
-	audit.mu.Unlock()
+	audit.mtx.Unlock()
 }
 
 func (audit *Audit) Trace(msg string) {
@@ -135,10 +134,10 @@ func (audit *Audit) Fatal(msg string) {
 	os.Exit(22)
 }
 
-func (audit *Audit) log(step, msg string) {
-	structured_msg := fmt.Sprintf("\033[1m%s %s \033[1m%s", time.Now().UTC().Format(audit.format), step, msg)
+func (audit *Audit) log(step string, msg string) {
+	structured_msg := fmt.Sprintf("\033[1m%s %s \033[1m%s", time.Now().UTC(), step, msg)
 
 	audit.queue.Append(structured_msg)
 
-	fmt.Printf(structured_msg)
+	fmt.Printf("%s\n", structured_msg)
 }
