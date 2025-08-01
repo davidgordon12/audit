@@ -202,7 +202,6 @@ func TestLogSimulated(t *testing.T) {
 	if err != nil {
 		fmt.Fprint(os.Stderr, "Failed to create audit: %w", err)
 	}
-	defer audit.Close()
 
 	// Act
 	LogMessages := 10000
@@ -224,6 +223,9 @@ func TestLogSimulated(t *testing.T) {
 	}
 
 	if expectedFileCount != actualFileCount {
-		t.Error("Expected %d files to be created, got %d", expectedFileCount, actualFileCount)
+		t.Errorf("Expected %d files to be created, got %d", expectedFileCount, actualFileCount)
 	}
+
+	audit.Close()
+	cleanup()
 }
