@@ -36,7 +36,7 @@ func flush(audit *Audit) {
 
 	// Pop does not actually remove any elements from the slice
 	// So it is safe to call it in the loop
-	for i := 0; i < audit.queue.count; i++ {
+	for range audit.queue.count {
 		log_msg, err := audit.queue.Pop()
 		if err != nil {
 			return
@@ -44,10 +44,14 @@ func flush(audit *Audit) {
 
 		if len(log_msg) > 0 && log_msg[len(log_msg)-1] != '\n' {
 			_, err := audit.writer.WriteString(log_msg + "\n")
-			fmt.Fprintf(os.Stderr, "%s", err)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s", err)
+			}
 		} else {
 			_, err := audit.writer.WriteString(log_msg)
-			fmt.Fprintf(os.Stderr, "%s", err)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s", err)
+			}
 		}
 	}
 
