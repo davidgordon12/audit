@@ -205,15 +205,25 @@ func TestLogSimulated(t *testing.T) {
 	defer audit.Close()
 
 	// Act
-	for i := 0; i < 10000; i++ {
+	LogMessages := 10000
+	for i := 0; i < LogMessages; i++ {
 		audit.Info(fmt.Sprintf("Info %d", i))
 		audit.Warn(fmt.Sprintf("Warn %d", i))
 		audit.Error(fmt.Sprintf("Error %d", i))
 	}
 
 	// Assert
-	// If we didn't crash then we should be good
+	expectedFileCount := LogMessages * 3 / audit.config.FileSize
+	actualFileCount := 0
 
-	// Cleanup
-	// Skip cleanup so we can manually verify file output
+	files, _ := os.ReadDir(".")
+	for _, file := range files {
+		if file.Name()[0:4] == "logs" {
+			actualFileCount++
+		}
+	}
+
+	if expectedFileCount != actualFileCount {
+		t.Error("Expected %d files to be created, got %d", expectedFileCount, actualFileCount)
+	}
 }

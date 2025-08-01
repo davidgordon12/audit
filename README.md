@@ -54,11 +54,11 @@ func main() {
 }
 ```
 
-More features to come, like JSON parsing, Tracing, and more.
-
 ## TODO:
 - [ ] Implement TRACE (and the ability to set the max depth)
 - [ ] Implement ERROR alerts to 3rd party logging systems like Grafana and Datadog
 - [ ] Enable or disable emojis for legacy terminals and editors
+- [ ] Implement ability to pass arguments (primitives and objects) to log call
+- [ ] File rotation
 - ~~[ ] Fix dangling threads with wait groups / channels~~
 - [x] Rewrite the logging to be synchronous, with an asynchronous background worker to pull messages from the queue.
