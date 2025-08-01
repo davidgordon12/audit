@@ -109,35 +109,44 @@ func (audit *Audit) Close() {
 }
 
 func (audit *Audit) Trace(msg string) {
-	audit.log("\033[95m🔎TRAC\033[m", msg)
+	if audit.config.Level <= TRACE {
+		audit.log("\033[35mTRAC\033[m", msg)
+	}
 }
 
 func (audit *Audit) Debug(msg string) {
-	audit.log("\033[95m🐛DEBU\033[m", msg)
+	if audit.config.Level <= DEBUG {
+		audit.log("\033[34mDEBU\033[m", msg)
+	}
 }
 
 func (audit *Audit) Info(msg string) {
-	audit.log("\033[92m👋INFO\033[m", msg)
+	if audit.config.Level <= INFO {
+		audit.log("\033[92mINFO\033[m", msg)
+	}
 }
 
 func (audit *Audit) Warn(msg string) {
-	audit.log("\033[33m⚠WARN\033[m", msg)
+	if audit.config.Level <= WARN {
+		audit.log("\033[33mWARN\033[m", msg)
+	}
 }
 
 func (audit *Audit) Error(msg string) {
-	/* Send some sort of alert here as well eventually */
-	audit.log("\033[31m❌ERRO\033[m", msg)
+	if audit.config.Level <= ERROR {
+		audit.log("\033[31mERRO\033[m", msg)
+	}
 }
 
 func (audit *Audit) Fatal(msg string) {
-	audit.log("\033[35m☠FATA\033[m", msg)
+	audit.log("\033[35mFATA\033[m", msg)
 	os.Exit(22)
 }
 
 func (audit *Audit) log(step string, msg string) {
-	structured_msg := fmt.Sprintf("\033[1m%s %s \033[1m%s", time.Now().UTC(), step, msg)
+	structured_msg := fmt.Sprintf("\033[1m[%s] %s \033[0m%s", time.Now().UTC().Format("2006-01-02 15:04:05"), step, msg)
 
 	audit.queue.Append(structured_msg)
 
-	fmt.Printf("%s\n", structured_msg)
+	fmt.Fprintf(os.Stdout, "%s \n", structured_msg)
 }

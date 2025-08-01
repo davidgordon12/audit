@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 )
 
@@ -34,21 +35,26 @@ func flush(audit *Audit) {
 	audit.mtx.Lock()
 	defer audit.mtx.Unlock()
 
+	// Not sure if this should be re-compiled each time we call flush, or on Audit initialization.
+	// But for my use-case, flush isn't called often. I can take the performance hit for now
+	ansiRegex := regexp.MustCompile("\x1b\\[[0-?]*[ -/]*[@-~]")
+
 	// Pop does not actually remove any elements from the slice
 	// So it is safe to call it in the loop
 	for range audit.queue.count {
 		log_msg, err := audit.queue.Pop()
+		log_msg_raw := ansiRegex.ReplaceAllString(log_msg, "")
 		if err != nil {
 			return
 		}
 
-		if len(log_msg) > 0 && log_msg[len(log_msg)-1] != '\n' {
-			_, err := audit.writer.WriteString(log_msg + "\n")
+		if len(log_msg_raw) > 0 && log_msg_raw[len(log_msg_raw)-1] != '\n' {
+			_, err := audit.writer.WriteString(log_msg_raw + "\n")
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s", err)
 			}
 		} else {
-			_, err := audit.writer.WriteString(log_msg)
+			_, err := audit.writer.WriteString(log_msg_raw)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s", err)
 			}
