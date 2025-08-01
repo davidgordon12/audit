@@ -195,7 +195,7 @@ func TestLogMultipleLevels(t *testing.T) {
 	cleanup()
 }
 
-func TestLogInfoSimulated(t *testing.T) {
+func TestLogSimulated(t *testing.T) {
 	// Setup
 	config := AuditConfig{}
 	audit, err := NewAudit(config)
@@ -206,10 +206,14 @@ func TestLogInfoSimulated(t *testing.T) {
 
 	// Act
 	for i := 0; i < 10000; i++ {
-		audit.Info(fmt.Sprintf("Cycle %d", i))
+		audit.Info(fmt.Sprintf("Info %d", i))
+		audit.Warn(fmt.Sprintf("Warn %d", i))
+		audit.Error(fmt.Sprintf("Error %d", i))
 	}
 
-	audit.Info("Completed")
-
 	// Assert
+	// If we didn't crash then we should be good
+
+	// Cleanup
+	// Skip cleanup so we can manually verify file output
 }
