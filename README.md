@@ -2,13 +2,19 @@
 
 A stylish wrapper around Go's Logger package.
 
-Audit is just a single Go file, that is short and sweet. Easy to read, modify and extend. Getting started is simple, first, download the dependency.
+Audit is just a few Go files, that are short and sweet, easy to read, modify and extend. Getting started is simple, first, download the dependency.
 
 ```
 go get github.com/davidgordon12/audit
 ```
 
-Then, just call NewAudit!
+Create an AuditConfig object (Let's leave it empty for now)
+
+```go
+config := AuditConfig{}
+```
+
+Now you can create a NewAudit()
 
 ```go
 package main
@@ -16,7 +22,7 @@ package main
 import "github.com/davidgordon12/audit"
 
 func main() {
-  audit := audit.NewAudit()
+  audit := audit.NewAudit(config)
 
   audit.Info("IM ALIVE!!!!!")
 }
@@ -53,6 +59,6 @@ More features to come, like JSON parsing, Tracing, and more.
 ## TODO:
 - [ ] Implement TRACE (and the ability to set the max depth)
 - [ ] Implement ERROR alerts to 3rd party logging systems like Grafana and Datadog
-- [ ] Maybe enable or disable emojis for legacy terminals and editors (but who else is really using this)
+- [ ] Enable or disable emojis for legacy terminals and editors
 - ~~[ ] Fix dangling threads with wait groups / channels~~
-- [ ] Rewrite the logging to be synchronous, with an asynchronous background worker to pull messages from the queue.
+- [x] Rewrite the logging to be synchronous, with an asynchronous background worker to pull messages from the queue.
