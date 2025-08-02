@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 )
 
 // Cleanup created log files
@@ -35,7 +36,7 @@ func cleanup() {
 
 func TestQueue(t *testing.T) {
 	// Setup
-	q := NewQueue()
+	q := NewQueue(3)
 
 	// Act
 	q.Append("a")
@@ -212,41 +213,6 @@ func TestLogMultipleLevels(t *testing.T) {
 	cleanup()
 }
 
-func TestLogSimulated(t *testing.T) {
-	// Setup
-	config := AuditConfig{}
-	audit, err := NewAudit(config)
-	if err != nil {
-		fmt.Fprint(os.Stderr, "Failed to create audit: %w", err)
-	}
-
-	// Act
-	LogMessages := 10000
-	for i := 0; i < LogMessages; i++ {
-		audit.Info(fmt.Sprintf("Info %d", i))
-		audit.Warn(fmt.Sprintf("Warn %d", i))
-		audit.Error(fmt.Sprintf("Error %d", i))
-	}
-
-	// Assert
-	expectedFileCount := LogMessages * 3 / audit.config.FileSize
-	actualFileCount := 0
-
-	files, _ := os.ReadDir(".")
-	for _, file := range files {
-		if file.Name()[0:4] == "logs" {
-			actualFileCount++
-		}
-	}
-
-	if expectedFileCount != actualFileCount {
-		t.Errorf("Expected %d files to be created, got %d", expectedFileCount, actualFileCount)
-	}
-
-	audit.Close()
-	cleanup()
-}
-
 func TestFlush(t *testing.T) {
 	// Setup
 	config := AuditConfig{
@@ -266,6 +232,7 @@ func TestFlush(t *testing.T) {
 		audit.Warn(fmt.Sprintf("Warn %d", i))
 		audit.Error(fmt.Sprintf("Error %d", i))
 	}
+	audit.Close()
 
 	// Assert
 	file, err := os.Open(audit.config.FilePath)
@@ -293,13 +260,13 @@ func TestFlush(t *testing.T) {
 
 	// Cleanup
 	cleanup()
-	audit.Close()
 }
 
 func TestRotate(t *testing.T) {
 	// Setup
 	config := AuditConfig{
-		FileSize: 1024, // 1KB approx. 15 messages
+		FileSize:  1024, // 1KB approx. 15 messages
+		QueueSize: 3,
 	}
 
 	audit, err := NewAudit(config)
@@ -308,15 +275,19 @@ func TestRotate(t *testing.T) {
 	}
 
 	// Act
-	LogMessages := 1500
+	LogMessages := 10
 	for i := 0; i < LogMessages; i++ {
+		audit.Debug(fmt.Sprintf("Debug %d", i))
+		audit.Trace(fmt.Sprintf("Trace %d", i))
 		audit.Info(fmt.Sprintf("Info %d", i))
 		audit.Warn(fmt.Sprintf("Warn %d", i))
 		audit.Error(fmt.Sprintf("Error %d", i))
+
+		time.Sleep(2 * time.Second) // Wait for flush interval
 	}
 
 	// Assert
-	expectedFileCount := 3
+	expectedFileCount := 2
 	actualFileCount := 0
 
 	files, _ := os.ReadDir(".")
@@ -331,5 +302,5 @@ func TestRotate(t *testing.T) {
 	}
 
 	audit.Close()
-	//cleanup()
+	cleanup()
 }

@@ -35,8 +35,6 @@ func startLogWriterService(audit *Audit) {
 			return
 		}
 
-		fmt.Fprintf(os.Stdout, "%d\n", info.Size())
-		fmt.Fprintf(os.Stdout, "%d\n", audit.config.FileSize)
 		if info.Size() > int64(audit.config.FileSize) {
 			rotateLogFile(audit)
 		}
