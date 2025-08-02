@@ -57,7 +57,7 @@ type Audit struct {
 const (
 	DefaultBatchSize     = 256                // 256 Messages
 	DefaultFileSize      = 1024 * 1024 * 1024 // 1 GB
-	DefaultFlushInterval = 1 * time.Second
+	DefaultFlushInterval = 250 * time.Millisecond
 	DefaultQueueSize     = 1024
 
 	MaxBatchSize = 512
