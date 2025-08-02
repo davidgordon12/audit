@@ -4,23 +4,23 @@ import (
 	"errors"
 )
 
-const capacity = 3
-
 // Only provides the following functionalitiy.
 // Append, Pop
 type Queue struct {
-	buff  []string
-	head  int
-	tail  int
-	count int
+	buff     []string
+	head     int
+	tail     int
+	count    int
+	capacity int
 }
 
-func NewQueue() *Queue {
+func NewQueue(capacity int) *Queue {
 	q := new(Queue)
 	q.buff = make([]string, capacity)
 	q.head = 0
 	q.tail = 0
 	q.count = 0
+	q.capacity = capacity
 	return q
 }
 
@@ -29,13 +29,13 @@ func NewQueue() *Queue {
 func (q *Queue) Append(s string) {
 	q.buff[q.tail] = s
 
-	if q.count == capacity {
-		q.head = (q.head + 1) % capacity
+	if q.count == q.capacity {
+		q.head = (q.head + 1) % q.capacity
 	}
 
-	q.tail = (q.tail + 1) % capacity
+	q.tail = (q.tail + 1) % q.capacity
 
-	if q.count < capacity {
+	if q.count < q.capacity {
 		q.count++
 	}
 }
@@ -47,7 +47,7 @@ func (q *Queue) Pop() (string, error) {
 	}
 
 	s := q.buff[q.head]
-	q.head = (q.head + 1) % capacity
+	q.head = (q.head + 1) % q.capacity
 	q.count--
 
 	return s, nil

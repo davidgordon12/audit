@@ -35,6 +35,9 @@ type AuditConfig struct {
 
 	// LogLevel. Default is INFO
 	Level LogLevel
+
+	// How many messages (string) the queue can hold at any given moment
+	QueueSize int
 }
 
 type Audit struct {
@@ -55,6 +58,7 @@ const (
 	DefaultBatchSize     = 256                // 256 Messages
 	DefaultFileSize      = 1024 * 1024 * 1024 // 1 GB
 	DefaultFlushInterval = 1 * time.Second
+	DefaultQueueSize     = 1024
 
 	MaxBatchSize = 512
 )
@@ -76,6 +80,9 @@ func NewAudit(cfg AuditConfig) (*Audit, error) {
 	if cfg.FlushInterval <= 0 {
 		cfg.FlushInterval = DefaultFlushInterval
 	}
+	if cfg.QueueSize <= 0 {
+		cfg.QueueSize = DefaultQueueSize
+	}
 
 	f, err := openFile(cfg)
 	if err != nil {
@@ -87,7 +94,7 @@ func NewAudit(cfg AuditConfig) (*Audit, error) {
 		config: cfg,
 		file:   f,
 		writer: bufio.NewWriter(f),
-		queue:  NewQueue(),
+		queue:  NewQueue(cfg.QueueSize),
 		ctx:    ctx,
 		cancel: cancel,
 	}
