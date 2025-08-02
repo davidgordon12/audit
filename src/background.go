@@ -25,6 +25,10 @@ func startLogWriterService(audit *Audit) {
 			return
 		}
 
+		if audit.queue.count >= int(float64(audit.queue.capacity+1)/1.5) {
+			flush(audit)
+		}
+
 		// TODO: Check if the file needs to be rotated
 		// Lock the mutex, check file size, unlock then call rotate (locks again)
 		audit.mtx.Lock()
