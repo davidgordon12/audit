@@ -56,12 +56,3 @@ func main() {
   audit.Info("IM ALIVE!!!!!")
 }
 ```
-
-## TODO:
-- [ ] Implement TRACE (and the ability to set the max depth)
-- [ ] Implement ERROR alerts to 3rd party logging systems like Grafana and Datadog
-- [ ] Enable or disable emojis for legacy terminals and editors
-- [ ] Implement ability to pass arguments (primitives and objects) to log call
-- [x] File rotation
-- ~~[ ] Fix dangling threads with wait groups / channels~~
-- [x] Rewrite the logging to be synchronous, with an asynchronous background worker to pull messages from the queue.
