@@ -29,8 +29,6 @@ func startLogWriterService(audit *Audit) {
 			flush(audit)
 		}
 
-		// TODO: Check if the file needs to be rotated
-		// Lock the mutex, check file size, unlock then call rotate (locks again)
 		audit.mtx.Lock()
 		info, err := audit.file.Stat()
 		audit.mtx.Unlock()
