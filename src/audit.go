@@ -143,45 +143,48 @@ func (audit *Audit) Close() {
 	audit.mtx.Unlock()
 }
 
-func (audit *Audit) Trace(msg string) {
+func (audit *Audit) Trace(msg string, a ...any) {
 	if audit.config.Level <= TRACE {
-		audit.log("\033[35mTRAC\033[m", msg)
+		audit.log("\033[35mTRAC\033[m", msg, a...)
 	}
 }
 
-func (audit *Audit) Debug(msg string) {
+func (audit *Audit) Debug(msg string, a ...any) {
 	if audit.config.Level <= DEBUG {
-		audit.log("\033[34mDEBU\033[m", msg)
+		audit.log("\033[34mDEBU\033[m", msg, a...)
 	}
 }
 
-func (audit *Audit) Info(msg string) {
+func (audit *Audit) Info(msg string, a ...any) {
 	if audit.config.Level <= INFO {
-		audit.log("\033[92mINFO\033[m", msg)
+		audit.log("\033[92mINFO\033[m", msg, a...)
 	}
 }
 
-func (audit *Audit) Warn(msg string) {
+func (audit *Audit) Warn(msg string, a ...any) {
 	if audit.config.Level <= WARN {
-		audit.log("\033[33mWARN\033[m", msg)
+		audit.log("\033[33mWARN\033[m", msg, a...)
 	}
 }
 
-func (audit *Audit) Error(msg string) {
+func (audit *Audit) Error(msg string, a ...any) {
 	if audit.config.Level <= ERROR {
-		audit.log("\033[31mERRO\033[m", msg)
+		audit.log("\033[31mERRO\033[m", msg, a...)
 	}
 }
 
-func (audit *Audit) Fatal(msg string) {
-	audit.log("\033[35mFATA\033[m", msg)
+func (audit *Audit) Fatal(msg string, a ...any) {
+	audit.log("\033[35mFATA\033[m", msg, a...)
 	os.Exit(22)
 }
 
-func (audit *Audit) log(step string, msg string) {
-	structured_msg := fmt.Sprintf("\033[1m[%s] %s \033[0m%s", time.Now().UTC().Format("2006-01-02 15:04:05"), step, msg)
+func (audit *Audit) log(step string, msg string, a ...any) {
+	log_prefix := fmt.Sprintf("\033[1m[%s] %s \033[0m", time.Now().UTC().Format("2006-01-02 15:04:05"), step)
+	log_data := fmt.Sprintf(msg, a...)
 
-	audit.queue.Append(structured_msg)
+	log_message_parsed := log_prefix + log_data
 
-	fmt.Fprintf(os.Stdout, "%s \n", structured_msg)
+	audit.queue.Append(log_message_parsed)
+
+	fmt.Println(log_message_parsed)
 }
