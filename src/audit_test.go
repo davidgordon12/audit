@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -228,9 +229,9 @@ func TestFlush(t *testing.T) {
 	// Act
 	LogMessages := 10
 	for i := 0; i < LogMessages; i++ {
-		audit.Info(fmt.Sprintf("Info %d", i))
-		audit.Warn(fmt.Sprintf("Warn %d", i))
-		audit.Error(fmt.Sprintf("Error %d", i))
+		audit.Info("Info %d", i)
+		audit.Warn("Warn %d", i)
+		audit.Error("Error %d", i)
 	}
 	audit.Close()
 
@@ -277,11 +278,11 @@ func TestRotate(t *testing.T) {
 	// Act
 	LogMessages := 10
 	for i := 0; i < LogMessages; i++ {
-		audit.Debug(fmt.Sprintf("Debug %d", i))
-		audit.Trace(fmt.Sprintf("Trace %d", i))
-		audit.Info(fmt.Sprintf("Info %d", i))
-		audit.Warn(fmt.Sprintf("Warn %d", i))
-		audit.Error(fmt.Sprintf("Error %d", i))
+		audit.Debug("Debug %d", i)
+		audit.Trace("Trace %d", i)
+		audit.Info("Info %d", i)
+		audit.Warn("Warn %d", i)
+		audit.Error("Error %d", i)
 
 		time.Sleep(2 * time.Second) // Wait for flush interval
 	}
@@ -302,5 +303,33 @@ func TestRotate(t *testing.T) {
 	}
 
 	audit.Close()
+	cleanup()
+}
+
+func TestAuditWithArgs(t *testing.T) {
+	// Setup
+	config := AuditConfig{}
+
+	audit, err := NewAudit(config)
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Failed to create audit: %w", err)
+	}
+
+	// Act
+	audit.Info("My name is %s", "audit")
+	audit.Close()
+
+	f, _ := os.Open("logs")
+	b := make([]byte, 44)
+	f.Read(b)
+	f.Close()
+
+	// Assert
+	expectedStr := "INFO My name is audit"
+	if !strings.Contains(string(b), expectedStr) {
+		t.Errorf("Expected log message %s was not in log file", expectedStr)
+	}
+
+	// Cleanup
 	cleanup()
 }
