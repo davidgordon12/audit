@@ -32,7 +32,7 @@ func main() {
 
 Output: 
 ```bash
-[2025-06-05 22:05:53] 👋INFO IM ALIVE!!!!!
+[2025-06-05 22:05:53] INFO IM ALIVE!!!!!
 ```
 
 Easily configure the auditer with the AuditConfig object
@@ -53,6 +53,6 @@ func main() {
 
   audit := audit.NewAudit(config)
 
-  audit.Info("IM ALIVE!!!!!")
+  audit.Debug("Now you see me..")
 }
 ```
