@@ -13,7 +13,7 @@ import (
 type LogLevel int
 
 const (
-	TRACE LogLevel = iota
+	TRACE LogLevel = iota + 1
 	DEBUG
 	INFO
 	WARN
@@ -83,23 +83,38 @@ func NewAudit(cfg AuditConfig) (*Audit, error) {
 	if cfg.QueueSize <= 0 {
 		cfg.QueueSize = DefaultQueueSize
 	}
-
-	f, err := openFile(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't open file: %w", err)
+	if cfg.Level <= 0 {
+		cfg.Level = INFO
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	audit := &Audit{
-		config: cfg,
-		file:   f,
-		writer: bufio.NewWriter(f),
-		queue:  NewQueue(cfg.QueueSize),
-		ctx:    ctx,
-		cancel: cancel,
-	}
+	var audit *Audit
 
-	go startLogWriterService(audit)
+	if cfg.Level <= DEBUG {
+		ctx, cancel := context.WithCancel(context.Background())
+		audit = &Audit{
+			config: cfg,
+			file:   nil,
+			writer: bufio.NewWriter(os.Stdout),
+			queue:  NewQueue(cfg.QueueSize),
+			ctx:    ctx,
+			cancel: cancel,
+		}
+	} else {
+		f, err := openFile(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't open file: %w", err)
+		}
+		ctx, cancel := context.WithCancel(context.Background())
+		audit = &Audit{
+			config: cfg,
+			file:   f,
+			writer: bufio.NewWriter(f),
+			queue:  NewQueue(cfg.QueueSize),
+			ctx:    ctx,
+			cancel: cancel,
+		}
+		go startLogWriterService(audit)
+	}
 
 	return audit, nil
 }
