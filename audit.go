@@ -27,7 +27,7 @@ type AuditConfig struct {
 	// How many messages will sit in the queue before they are all written at once
 	BatchSize int
 
-	// The file path without the name (e.g. resources/logs)
+	// The file path with the name (e.g. resources/logs/log.txt)
 	FilePath string
 
 	// Max file size in bytes
