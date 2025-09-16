@@ -2,6 +2,8 @@
 
 A stylish logging package.
 
+![Showcase](https://gyazo.com/4549d3634ac867cafc072d084b630913)
+
 Audit is just a few Go files, that are short and sweet, easy to read, modify and extend. Getting started is simple, first, download the dependency.
 
 ```
