@@ -193,6 +193,12 @@ func (audit *Audit) Fatal(msg string, a ...any) {
 	os.Exit(22)
 }
 
+/* A simple Log method that prints the message with no decoration */
+func (audit *Audit) Log(msg string) {
+	audit.queue.Append(msg)
+	fmt.Println(msg)
+}
+
 func (audit *Audit) log(step string, msg string, a ...any) {
 	log_prefix := fmt.Sprintf("\033[1m[%s] %s \033[0m", time.Now().UTC().Format("2006-01-02 15:04:05"), step)
 	log_data := fmt.Sprintf(msg, a...)
